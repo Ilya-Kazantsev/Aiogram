@@ -19,4 +19,5 @@ async def start_bot(message: Message):
 
 @router.message(Text(contains='О боте'))
 async def about(message: Message):
-    await message.answer('---')
+    await message.answer('Данный бот способен записывать ваши задачи, а также периодично напоминать о них с помощью пометок,'
+                         'также у вас будет возможность посмотреть задачи на любой из дней')

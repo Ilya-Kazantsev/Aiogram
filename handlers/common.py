@@ -1,7 +1,8 @@
 from aiogram import Router
 from aiogram.filters import Command, Text
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
+from aiogram3_calendar import simple_cal_callback, SimpleCalendar
 
 from keyboards.main import main_keyboard
 from task_state import TaskState
@@ -41,12 +42,14 @@ async def get_task_name(message: Message, state: FSMContext):
 @router.message(TaskState.description)
 async def get_description(message: Message, state: FSMContext):
     await state.update_data(description=message.text)
-    await message.answer('Введите дату исполнения')
+    await message.answer('Введите дату исполнения', reply_markup=await SimpleCalendar().start_calendar())
     await state.set_state(TaskState.deadline)
 
 
-@router.message(TaskState.deadline)
-async def get_deadline(message: Message, state: FSMContext):
-    await state.update_data(deadline=message.text)
-    data = await state.get_data()
-    await message.answer(f"{data['name']}\n{data['description']}\n{data['deadline']}")
+@router.callback_query(simple_cal_callback.filter())
+async def process_simple_calendar(callback_query: CallbackQuery, callback_data: dict, state: FSMContext):
+    selected, date = await SimpleCalendar().process_selection(callback_query, callback_data)
+    if selected:
+        await state.update_data(deadline=date.strftime("%d/%m/%Y"))
+        data = await state.get_data()
+        await callback_query.message.answer(f"{data['name']}\n{data['description']}\n{data['deadline']}")
